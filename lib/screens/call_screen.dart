@@ -81,7 +81,6 @@ class _CallScreenState extends State<CallScreen> {
         context.read<SpeechCubit>().change(text);
         Future.delayed(const Duration(seconds: 5), () {
           if (mounted) context.read<SpeechCubit>().change("");
-         
         });
       }
     });
