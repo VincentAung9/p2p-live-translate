@@ -1,12 +1,10 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_sound/flutter_sound.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:speech_to_text/speech_recognition_result.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:speech_to_text/speech_to_text.dart';
-import 'package:translator/translator.dart';
 import 'package:video_live_translation/bloc/speech_cubit.dart';
-import '../debouncer.dart';
 import '../signaling.dart';
 
 class CallScreen extends StatefulWidget {
@@ -26,10 +24,6 @@ class CallScreen extends StatefulWidget {
 }
 
 class _CallScreenState extends State<CallScreen> {
-  //translation
-  SpeechToText _speechToText = SpeechToText();
-  final translator = GoogleTranslator();
-  // socket instance
   final socket = SignallingService.instance.socket;
 
   // videoRenderer for localPeer
@@ -49,16 +43,22 @@ class _CallScreenState extends State<CallScreen> {
 
   // media status
   bool isAudioOn = true, isVideoOn = true, isFrontCameraSelected = true;
+  FlutterSoundRecorder recorder = FlutterSoundRecorder();
+  StreamController<Uint8List>? _audioStreamController;
+
+  Future<void> openRecorder() async {
+    await recorder.openRecorder();
+  }
 
   @override
   void initState() {
     // initializing renderers
     _localRTCVideoRenderer.initialize();
     _remoteRTCVideoRenderer.initialize();
-
+    openRecorder();
     // setup Peer Connection
     _setupPeerConnection();
-    _initSpeech();
+    _startSTT();
     super.initState();
   }
 
@@ -69,73 +69,41 @@ class _CallScreenState extends State<CallScreen> {
     }
   }
 
-  //--For Speech--------
-  void _initSpeech() async {
-    await _speechToText.initialize();
-    setState(() {});
+  // inside your CallScreen
+  void _startSTT() async {
+    _audioStreamController = StreamController<Uint8List>();
 
-    //listen incomming speech
-    SignallingService.instance.socket!.on("incomeTranslation", (data) {
-      var text = data["text"];
+    // 2️⃣ Forward each chunk to your socket
+    _audioStreamController!.stream.listen((chunk) {
+      SignallingService.instance.socket!.emit("audioChunk", chunk);
+    });
+    // notify Node.js server to start STT
+    SignallingService.instance.socket!.emit("startSTT", {
+      "language": widget.selfCaller ? "en-US" : "my-MM",
+      "to": widget.selfCaller ? widget.calleeId : widget.callerId,
+    });
+
+    // start capturing mic audio
+    await recorder.startRecorder(
+      toStream: _audioStreamController?.sink,
+      codec: Codec.pcm16,
+      sampleRate: 16000,
+      numChannels: 1,
+    );
+
+    // listen for STT result
+    SignallingService.instance.socket!.on("sttResult", (data) {
+      debugPrint("✉️--STTResult: ${data["translated"]}");
       if (mounted) {
-        context.read<SpeechCubit>().change(text);
-        Future.delayed(const Duration(seconds: 5), () {
-          if (mounted) context.read<SpeechCubit>().change("");
-        });
+        context.read<SpeechCubit>().change(data["translated"]);
       }
     });
   }
 
-  /// Each time to start a speech recognition session
-  void _startListening() async {
-    await _speechToText.listen(onResult: _onSpeechResult);
-    debugPrint("🔥Start Listenging...");
-    setState(() {});
+  void _stopSTT() async {
+    await recorder.stopRecorder();
+    SignallingService.instance.socket!.emit("stopSTT");
   }
-
-  /// Manually stop the active speech recognition session
-  /// Note that there are also timeouts that each platform enforces
-  /// and the SpeechToText plugin supports setting timeouts on the
-  /// listen method.
-  void _stopListening() async {
-    await _speechToText.stop();
-    debugPrint("🔥Stop Listengin...");
-    setState(() {});
-  }
-
-  /// This is the callback that the SpeechToText plugin calls when
-  /// the platform returns recognized words.
-  final _debouncer = Debouncer(
-    milliseconds: 100,
-  ); // wait 0.8 sec after user stops speaking
-
-  void _onSpeechResult(SpeechRecognitionResult result) {
-    final text = result.recognizedWords;
-    debugPrint("🔥TEXT: $text");
-    // debounce the translation request
-    _debouncer.run(() async {
-      try {
-        if (text.isNotEmpty) {
-          translator.translate(text, to: widget.selfCaller ? 'my' : 'en').then((
-            translationText,
-          ) {
-            debugPrint("🔥TEXT: $text");
-            SignallingService.instance.socket!.emit("translationText", [
-              {
-                "to": widget.selfCaller ? widget.calleeId : widget.callerId,
-                "text": translationText.text,
-              },
-            ]);
-
-            Future.delayed(const Duration(seconds: 5), () {
-              _stopListening();
-            });
-          });
-        }
-      } catch (e) {}
-    });
-  }
-  //----------
 
   _setupPeerConnection() async {
     try {
@@ -144,10 +112,18 @@ class _CallScreenState extends State<CallScreen> {
         'iceServers': [
           {
             'urls': [
+              'turn:35.187.243.213:3478?transport=udp',
+              'turn:35.187.243.213:3478?transport=tcp',
+            ],
+            'username': 'flutter',
+            'credential': '123456',
+          },
+          /* {
+            'urls': [
               'stun:stun1.l.google.com:19302',
               'stun:stun2.l.google.com:19302',
             ],
-          },
+          }, */
         ],
       });
 
@@ -247,10 +223,7 @@ class _CallScreenState extends State<CallScreen> {
           "sdpOffer": offer.toMap(),
         });
       }
-      // Receive translated text from remote peer
-      SignallingService.instance.socket!.on("translationText", (data) {
-        context.read<SpeechCubit>().change(data["text"]);
-      });
+
       //endCall from remote
       SignallingService.instance.socket!.on("callEnded", (data) {
         debugPrint("🔥------CALLENDED");
@@ -258,6 +231,7 @@ class _CallScreenState extends State<CallScreen> {
         _remoteRTCVideoRenderer.dispose();
         _localStream?.dispose();
         _rtcPeerConnection?.dispose();
+        _stopSTT();
         if (mounted) {
           showDialog(
             context: context,
@@ -292,6 +266,7 @@ class _CallScreenState extends State<CallScreen> {
     _localStream?.dispose();
     _localRTCVideoRenderer.srcObject = null;
     _remoteRTCVideoRenderer.srcObject = null;
+    _stopSTT();
     if (mounted) {
       Navigator.pop(context);
     }
@@ -390,15 +365,6 @@ class _CallScreenState extends State<CallScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   IconButton(
-                    icon: Icon(
-                      _speechToText.isListening ? Icons.mic : Icons.mic_off,
-                    ),
-                    onPressed:
-                        _speechToText.isListening
-                            ? _stopListening
-                            : _startListening,
-                  ),
-                  IconButton(
                     icon: Icon(isAudioOn ? Icons.mic : Icons.mic_off),
                     onPressed: _toggleMic,
                   ),
@@ -430,7 +396,7 @@ class _CallScreenState extends State<CallScreen> {
     _remoteRTCVideoRenderer.dispose();
     _localStream?.dispose();
     _rtcPeerConnection?.dispose();
-
+    _stopSTT();
     super.dispose();
   }
 }
