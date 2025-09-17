@@ -1,15 +1,13 @@
 // screens/call_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:video_live_translation/bloc/call_cubit.dart';
-import 'package:video_live_translation/bloc/join_cubit.dart';
 import 'package:video_live_translation/screens/join_screen.dart';
 import 'package:video_live_translation/service/stt_service.dart';
 import 'package:video_live_translation/service/webrtc_service.dart';
 
-class CallScreen extends StatefulWidget {
+class CallScreen extends StatelessWidget {
   final String callerId, calleeId;
   final bool selfCaller;
   final dynamic offer;
@@ -25,27 +23,15 @@ class CallScreen extends StatefulWidget {
   });
 
   @override
-  State<CallScreen> createState() => _CallScreenState();
-}
-
-class _CallScreenState extends State<CallScreen> {
-  @override
-  void deactivate() {
-    debugPrint("❌----Deactivate----🔥");
-    context.read<JoinCubit>().resetState();
-    super.deactivate();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create:
           (context) => CallCubit(WebRTCService(), SttService())..init(
-            callerId: widget.callerId,
-            calleeId: widget.calleeId,
-            selfCaller: widget.selfCaller,
-            selectedLanguage: widget.selectedLanguage,
-            offer: widget.offer,
+            callerId: callerId,
+            calleeId: calleeId,
+            selfCaller: selfCaller,
+            selectedLanguage: selectedLanguage,
+            offer: offer,
           ),
       child: const _CallScreenView(),
     );
@@ -70,38 +56,43 @@ class _CallScreenView extends StatelessWidget {
             Expanded(
               child: Stack(
                 children: [
-                  BlocSelector<JoinCubit, JoinState, bool>(
-                    selector: (state) => state.callEnd,
-                    builder: (context, callEnd) {
-                      return BlocConsumer<CallCubit, CallState>(
-                        listener: (context, state) {},
-                        listenWhen: (pre, cur) => pre.status != cur.status,
-                        builder: (context, state) {
-                          return state.remoteRenderer.srcObject == null ||
-                                  callEnd
-                              ? Container(
-                                color: Colors.black,
-                                height: size.height,
-                                width: size.width,
-                                child: Center(
-                                  child: Text(
-                                    callEnd
-                                        ? "Participant disconnected."
-                                        : "Waiting for the other participant to join…”",
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                              )
-                              : RTCVideoView(
-                                state.remoteRenderer,
-                                objectFit:
-                                    RTCVideoViewObjectFit
-                                        .RTCVideoViewObjectFitCover,
-                              );
-                        },
-                      );
+                  BlocConsumer<CallCubit, CallState>(
+                    listener: (context, state) {},
+                    listenWhen: (pre, cur) => pre.status != cur.status,
+                    builder: (context, state) {
+                      return state.status == CallStatus.disconnected
+                          ? Container(
+                            color: Colors.black,
+                            height: size.height,
+                            width: size.width,
+                            child: Center(
+                              child: Text(
+                                "Participant disconnected.",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          )
+                          : state.remoteRenderer.srcObject == null
+                          ? Container(
+                            color: Colors.black,
+                            height: size.height,
+                            width: size.width,
+                            child: Center(
+                              child: Text(
+                                "Waiting for the other participant to join…",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          )
+                          : RTCVideoView(
+                            state.remoteRenderer,
+                            objectFit:
+                                RTCVideoViewObjectFit
+                                    .RTCVideoViewObjectFitCover,
+                          );
                     },
                   ),
+
                   Positioned(
                     right: 20,
                     bottom: 20,

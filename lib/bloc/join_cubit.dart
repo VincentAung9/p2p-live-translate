@@ -2,7 +2,6 @@
 
 import 'dart:async';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:socket_io_client/socket_io_client.dart';
 import '../signaling.dart';
@@ -11,18 +10,14 @@ import '../signaling.dart';
 class JoinState extends Equatable {
   // This holds the data for the incoming call notification
   final Map<String, dynamic>? incomingOffer;
-  final bool callEnd;
 
-  const JoinState({this.incomingOffer, this.callEnd = false});
+  const JoinState({this.incomingOffer});
 
   JoinState copyWith({Map<String, dynamic>? incomingOffer, bool? callEnd}) =>
-      JoinState(
-        incomingOffer: incomingOffer ?? this.incomingOffer,
-        callEnd: callEnd ?? this.callEnd,
-      );
+      JoinState(incomingOffer: incomingOffer ?? this.incomingOffer);
 
   @override
-  List<Object?> get props => [incomingOffer, callEnd];
+  List<Object?> get props => [incomingOffer];
 }
 
 // 2. Create the Cubit
@@ -47,7 +42,7 @@ class JoinCubit extends Cubit<JoinState> {
   }
 
   void _onCallCancelled(dynamic data) {
-    emit(const JoinState(incomingOffer: null, callEnd: true));
+    emit(const JoinState(incomingOffer: null));
     // Only clear the offer if the cancellation is for the current incoming call
     /* if (state.incomingOffer != null &&
         (state.incomingOffer!["callerId"] == data["to"] ||
@@ -61,11 +56,6 @@ class JoinCubit extends Cubit<JoinState> {
   void rejectCall() {
     _socket.emit("endCall", {"calleeId": state.incomingOffer?["callerId"]});
     emit(const JoinState(incomingOffer: null));
-  }
-
-  void resetState() {
-    debugPrint("🔥 Reset State...");
-    emit(state.copyWith(callEnd: false, incomingOffer: null));
   }
 
   @override

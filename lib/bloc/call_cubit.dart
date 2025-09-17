@@ -8,7 +8,12 @@ import 'package:video_live_translation/service/stt_service.dart';
 import 'package:video_live_translation/service/webrtc_service.dart';
 
 // You can add this to your call_cubit.dart file
-enum CallStatus { initial, localStreamAttached, remoteStreamAttached }
+enum CallStatus {
+  initial,
+  localStreamAttached,
+  remoteStreamAttached,
+  disconnected,
+}
 // cubit/call_cubit.dart
 
 // 1. Define the State
@@ -80,6 +85,18 @@ class CallCubit extends Cubit<CallState> {
     _webRTCService.onLocalStream = (stream) {
       // ✅ This will now trigger a rebuild
       emit(state.copyWith(status: CallStatus.localStreamAttached));
+    };
+    // ✅ LISTEN FOR CONNECTION STATE CHANGES
+    _webRTCService.onConnectionStateChanged = (connectionState) {
+      if (connectionState ==
+              RTCPeerConnectionState.RTCPeerConnectionStateDisconnected ||
+          connectionState ==
+              RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
+          connectionState ==
+              RTCPeerConnectionState.RTCPeerConnectionStateClosed) {
+        // Emit a state that reflects the disconnection
+        emit(state.copyWith(status: CallStatus.disconnected));
+      }
     };
   }
 

@@ -15,7 +15,12 @@ class JoinScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _JoinScreenView(selfCallerId: selfCallerId);
+    return BlocProvider(
+      // The Cubit is created and its listeners are initialized here.
+      // The BlocProvider will automatically call cubit.close() when the screen is disposed.
+      create: (context) => JoinCubit()..init(),
+      child: _JoinScreenView(selfCallerId: selfCallerId),
+    );
   }
 }
 

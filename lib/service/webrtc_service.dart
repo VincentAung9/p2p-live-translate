@@ -15,6 +15,7 @@ class WebRTCService {
 
   // Callbacks to notify the Cubit/UI of changes
   Function(MediaStream stream)? onRemoteStream;
+  Function(RTCPeerConnectionState state)? onConnectionStateChanged;
   Function(MediaStream stream)? onLocalStream;
 
   Future<void> initialize() async {
@@ -39,7 +40,11 @@ class WebRTCService {
         },
       ],
     });
-
+    _peerConnection!.onConnectionState = (state) {
+      print('Connection State Changed: $state');
+      // Notify the cubit about the change
+      onConnectionStateChanged?.call(state);
+    };
     // Listen for remote peer's media stream
     _peerConnection!.onTrack = (event) {
       remoteRenderer.srcObject = event.streams[0];
