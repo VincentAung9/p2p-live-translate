@@ -1,9 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:speech_to_text/speech_to_text.dart';
-import 'package:video_live_translation/bloc/speech_cubit.dart';
-import 'package:video_live_translation/screens/speech_test_screen.dart';
+import 'package:video_live_translation/bloc/join_cubit.dart';
 import 'package:video_live_translation/signaling.dart';
 
 import 'screens/join_screen.dart';
@@ -42,8 +40,10 @@ class _MyAppState extends State<MyApp> {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [BlocProvider(create: (_) => SpeechCubit())],
+    return BlocProvider(
+      // The Cubit is created and its listeners are initialized here.
+      // The BlocProvider will automatically call cubit.close() when the screen is disposed.
+      create: (context) => JoinCubit()..init(),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Flutter Demo',
