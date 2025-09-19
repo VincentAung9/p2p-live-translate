@@ -48,7 +48,7 @@ class _CallScreenView extends StatelessWidget {
     // by listening to your signaling service and maybe pushing an event to the cubit.
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Colors.white,
       appBar: AppBar(title: const Text("P2P Call App")),
       body: SafeArea(
         child: Column(
@@ -148,48 +148,69 @@ class _CallScreenView extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  BlocSelector<CallCubit, CallState, bool>(
-                    selector: (state) => state.isAudioOn,
-                    builder: (context, state) {
-                      return IconButton(
-                        icon: Icon(state ? Icons.mic : Icons.mic_off),
-                        onPressed: () => context.read<CallCubit>().toggleMic(),
-                      );
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.call_end),
-                    iconSize: 30,
-                    onPressed: () {
-                      // Access original widget properties to pass to leaveCall
-                      final parent =
-                          context.findAncestorWidgetOfExactType<CallScreen>()!;
-                      context.read<CallCubit>().leaveCall(
-                        calleeId: parent.calleeId,
-                        callerId: parent.callerId,
-                        selfCaller: parent.selfCaller,
-                      );
-                      Navigator.pop(context);
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.cameraswitch),
-                    onPressed: () => context.read<CallCubit>().switchCamera(),
-                  ),
-                  BlocSelector<CallCubit, CallState, bool>(
-                    selector: (state) => state.isVideoOn,
-                    builder: (context, state) {
-                      return IconButton(
-                        icon: Icon(state ? Icons.videocam : Icons.videocam_off),
-                        onPressed:
-                            () => context.read<CallCubit>().toggleCamera(),
-                      );
-                    },
-                  ),
-                ],
+              child: Container(
+                color: Colors.white,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.call_end, color: Colors.red),
+                      iconSize: 30,
+                      onPressed: () {
+                        // Access original widget properties to pass to leaveCall
+                        final parent =
+                            context
+                                .findAncestorWidgetOfExactType<CallScreen>()!;
+                        context.read<CallCubit>().leaveCall(
+                          calleeId: parent.calleeId,
+                          callerId: parent.callerId,
+                          selfCaller: parent.selfCaller,
+                        );
+                        Navigator.pop(context);
+                      },
+                    ),
+                    BlocSelector<CallCubit, CallState, RecordingStatus>(
+                      selector: (state) => state.recordingStatus,
+                      builder: (context, state) {
+                        return IconButton(
+                          icon:
+                              state == RecordingStatus.recordingStarted
+                                  ? Image.asset(
+                                    "assets/microphone.gif",
+                                    width: 55,
+                                    height: 55,
+                                  )
+                                  : Image.asset(
+                                    "assets/microphone.png",
+                                    width: 50,
+                                    height: 50,
+                                  ),
+                          onPressed:
+                              () =>
+                                  state == RecordingStatus.recordingStarted
+                                      ? context.read<CallCubit>().stopRecord()
+                                      : context.read<CallCubit>().startRecord(),
+                        );
+                      },
+                    ),
+
+                    IconButton(
+                      icon: const Icon(Icons.cameraswitch, color: Colors.green),
+                      onPressed: () => context.read<CallCubit>().switchCamera(),
+                    ),
+                    /*  BlocSelector<CallCubit, CallState, bool>(
+                      selector: (state) => state.isVideoOn,
+                      builder: (context, state) {
+                        return IconButton(
+                          icon: Icon(state ? Icons.videocam : Icons.videocam_off),
+                          onPressed:
+                              () => context.read<CallCubit>().toggleCamera(),
+                        );
+                      },
+                    ),
+                  */
+                  ],
+                ),
               ),
             ),
           ],

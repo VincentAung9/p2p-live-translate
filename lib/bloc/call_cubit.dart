@@ -1,6 +1,7 @@
 // cubit/call_cubit.dart
 import 'dart:async';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:video_live_translation/screens/join_screen.dart';
@@ -14,6 +15,8 @@ enum CallStatus {
   remoteStreamAttached,
   disconnected,
 }
+
+enum RecordingStatus { recordingStarted, recordingStopped }
 // cubit/call_cubit.dart
 
 // 1. Define the State
@@ -24,7 +27,8 @@ class CallState extends Equatable {
   final bool isVideoOn;
   final bool isFrontCameraSelected;
   final String translationText;
-  final CallStatus status; // <-- ADD THIS
+  final CallStatus status;
+  final RecordingStatus recordingStatus;
 
   const CallState({
     required this.localRenderer,
@@ -33,7 +37,8 @@ class CallState extends Equatable {
     this.isVideoOn = true,
     this.isFrontCameraSelected = true,
     this.translationText = "",
-    this.status = CallStatus.initial, // <-- ADD THIS
+    this.status = CallStatus.initial,
+    this.recordingStatus = RecordingStatus.recordingStopped,
   });
 
   CallState copyWith({
@@ -41,7 +46,8 @@ class CallState extends Equatable {
     bool? isVideoOn,
     bool? isFrontCameraSelected,
     String? translationText,
-    CallStatus? status, // <-- ADD THIS
+    CallStatus? status,
+    RecordingStatus? recordingStatus,
   }) {
     return CallState(
       localRenderer: localRenderer,
@@ -51,7 +57,8 @@ class CallState extends Equatable {
       isFrontCameraSelected:
           isFrontCameraSelected ?? this.isFrontCameraSelected,
       translationText: translationText ?? this.translationText,
-      status: status ?? this.status, // <-- ADD THIS
+      status: status ?? this.status,
+      recordingStatus: recordingStatus ?? this.recordingStatus,
     );
   }
 
@@ -61,7 +68,8 @@ class CallState extends Equatable {
     isVideoOn,
     isFrontCameraSelected,
     translationText,
-    status, // <-- ADD THIS TO PROPS
+    status,
+    recordingStatus,
   ];
 }
 
@@ -151,6 +159,17 @@ class CallCubit extends Cubit<CallState> {
     final newCameraState = !state.isFrontCameraSelected;
     _webRTCService.switchCamera();
     emit(state.copyWith(isFrontCameraSelected: newCameraState));
+  }
+
+  void startRecord() async {
+    debugPrint("🎸 Start Recording");
+    await _sttService.startRecord();
+    emit(state.copyWith(recordingStatus: RecordingStatus.recordingStarted));
+  }
+
+  void stopRecord() async {
+    await _sttService.stopRecord();
+    emit(state.copyWith(recordingStatus: RecordingStatus.recordingStopped));
   }
 
   @override
