@@ -32,17 +32,27 @@ class WebRTCService {
     // FIX 2: Added public STUN servers for better performance.
     // This allows for direct P2P connections when possible, before falling back to TURN.
     _peerConnection = await createPeerConnection({
-      'iceServers': [
-        {
-          'urls': ['stun:34.124.203.35:3478'],
-        },
+      /*  'iceServers': [
         {
           'urls': [
+            'stun:34.124.203.35:3478',
             'turn:34.124.203.35:3478?transport=udp',
             'turn:34.124.203.35:3478?transport=tcp',
+            'turns:34.124.203.35:5349?transport=tcp',
           ],
           'username': 'username1',
           'credential': 'key1',
+        },
+      ],
+      'iceTransportPolicy': 'relay', */
+      'iceServers': [
+        {
+          'urls': [
+            'relay1.expressturn.com:3480?transport=udp',
+            'relay1.expressturn.com:3480?transport=tcp',
+          ],
+          'username': '000000002074284219',
+          'credential': 'Hr0n60SicfAYt8FayOb86i1WAPU=',
         },
       ],
     });

@@ -43,8 +43,6 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-
-      // home: HomePage(selfCallerID: selfCallerID),
       home: JoinScreen(selfCallerId: selfCallerID),
     );
   }
