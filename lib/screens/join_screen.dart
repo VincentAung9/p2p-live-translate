@@ -45,7 +45,9 @@ class _JoinScreenViewState extends State<_JoinScreenView> {
 
   Future<String?> fetchToken(String identity, String roomName) async {
     final response = await http.post(
-      Uri.parse("https://smagent-39445099784.asia-southeast1.run.app/getToken"),
+      Uri.parse(
+        "https://p2p-live-translate-backend-39445099784.europe-west1.run.app/getToken",
+      ),
       body: jsonEncode({"identity": identity, "roomName": roomName}),
       headers: {"Content-Type": "application/json"},
     );

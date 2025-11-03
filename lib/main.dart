@@ -17,7 +17,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   // signalling server url
   final String websocketUrl =
-      "https://smagent-39445099784.asia-southeast1.run.app";
+      "https://p2p-live-translate-backend-39445099784.europe-west1.run.app";
 
   // generate callerID of local user
   final String selfCallerID = Random()
