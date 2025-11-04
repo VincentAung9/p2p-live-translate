@@ -705,12 +705,14 @@ class CallScreen extends StatelessWidget {
   final String livekitUrl;
   final String livekitToken;
   final Language selectedLanguage;
+  final String receiptId;
 
   const CallScreen({
     super.key,
     required this.livekitUrl, // <--- NEW PARAMETER
     required this.livekitToken, // <--- NEW PARAMETER
     required this.selectedLanguage,
+    required this.receiptId,
     // Note: The previous WebRTC parameters (callerId, calleeId, selfCaller, offer)
     // are now obsolete for the initial connection phase in this component.
   });
@@ -726,6 +728,7 @@ class CallScreen extends StatelessWidget {
             url: livekitUrl,
             token: livekitToken,
             selectedLanguage: selectedLanguage,
+            recipientId: receiptId,
           ),
       child: const _CallScreenView(),
     );

@@ -320,13 +320,14 @@ class CallCubit extends Cubit<CallState> {
     required String url,
     required String token,
     required Language selectedLanguage,
+    required String recipientId,
   }) async {
     await _liveKitService.initialize();
     await _liveKitService.connect(url: url, token: token);
 
     await _sttService.initialize(
       language: selectedLanguage == Language.en ? "en-US" : "my-MM",
-      recipientId: "livekit",
+      recipientId: recipientId,
     );
 
     _translationSubscription = _sttService.translationStream.listen((text) {

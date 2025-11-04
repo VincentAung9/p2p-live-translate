@@ -48,7 +48,7 @@ class _JoinScreenViewState extends State<_JoinScreenView> {
       Uri.parse(
         "https://p2p-live-translate-backend-39445099784.europe-west1.run.app/getToken",
       ),
-      body: jsonEncode({"identity": identity, "roomName": roomName}),
+      body: jsonEncode({"identity": identity, "roomName": "roomName"}),
       headers: {"Content-Type": "application/json"},
     );
 
@@ -75,6 +75,7 @@ class _JoinScreenViewState extends State<_JoinScreenView> {
               livekitUrl: livekitUrl,
               livekitToken: token,
               selectedLanguage: selectedLanguage,
+              receiptId: roomName,
             ),
       ),
     );
@@ -151,10 +152,25 @@ class _JoinScreenViewState extends State<_JoinScreenView> {
 
                     const SizedBox(height: 12),
                     TextField(
+                      readOnly: true,
+                      textAlign: TextAlign.center,
+
+                      decoration: InputDecoration(
+                        labelText: "Your ID",
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        hintText: widget.selfCallerId,
+                        hintStyle: TextStyle(color: Colors.black),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
                       controller: remoteCallerIdTextEditingController,
                       textAlign: TextAlign.center,
                       decoration: InputDecoration(
-                        hintText: "Enter Room Name or Partner ID",
+                        hintText: "Enter  Partner ID",
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10.0),
                         ),
